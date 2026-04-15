@@ -10,40 +10,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/app/components/ui/popover";
-import { format, isToday, addMinutes } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-
-const unidades = [
-  { 
-    id: "1", 
-    nome: "Totex Motors - Tamboré", 
-    endereco: "Av. Piracema, 669 - Tamboré, Barueri - SP, 06460-030 (G4)" 
-  },
-];
-
-const todosHorarios = [
-  "10:00",
-  "10:30",
-  "11:00",
-  "11:30",
-  "12:00",
-  "12:30",
-  "13:00",
-  "13:30",
-  "14:00",
-  "14:30",
-  "15:00",
-  "15:30",
-  "16:00",
-  "16:30",
-  "17:00",
-  "17:30",
-  "18:00",
-  "18:30",
-  "19:00",
-  "19:30",
-  "20:00",
-];
+import { getHorariosDisponiveis, isDataValida, isHorarioValido, getNomeDia } from "@/app/lib/scheduling-utils";
+import { UNIDADES } from "@/app/config/unidades";
 
 export default function Scheduling() {
   const router = useRouter();
@@ -52,35 +22,37 @@ export default function Scheduling() {
   const [horario, setHorario] = useState("");
 
   // Função para filtrar horários disponíveis
-  const getHorariosDisponiveis = () => {
-    if (!date || !isToday(date)) {
-      return todosHorarios;
+  const getHorariosDisponivelsByDate = () => {
+    if (!date) {
+      return [];
     }
-
-    // Se for hoje, filtrar horários que são pelo menos 30 minutos no futuro
-    const now = new Date();
-    const minTime = addMinutes(now, 30);
-    const minHours = minTime.getHours();
-    const minMinutes = minTime.getMinutes();
-
-    return todosHorarios.filter((horario) => {
-      const [hours, minutes] = horario.split(":").map(Number);
-      const horarioTime = hours * 60 + minutes;
-      const minTimeInMinutes = minHours * 60 + minMinutes;
-      
-      return horarioTime >= minTimeInMinutes;
-    });
+    return getHorariosDisponiveis(date);
   };
 
-  const horariosDisponiveis = getHorariosDisponiveis();
+  const horariosDisponiveis = getHorariosDisponivelsByDate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validações finais
+    if (!date || !isDataValida(date)) {
+      alert("Data inválida. Não é permitido agendar em domingo ou no passado.");
+      return;
+    }
+
+    if (!isHorarioValido(date, horario)) {
+      alert("Horário inválido para a data selecionada.");
+      return;
+    }
+
     const schedulingData = {
-      date: date?.toISOString(),
-      unidade: unidades.find((u) => u.id === unidade),
+      data: format(date, "yyyy-MM-dd"),
+      dataBr: format(date, "PPP", { locale: ptBR }),
+      diaSemana: getNomeDia(date),
       horario,
+      unidade: UNIDADES.find((u) => u.id === unidade),
     };
+    
     localStorage.setItem("schedulingData", JSON.stringify(schedulingData));
     router.push("/confirmacao");
   };
@@ -136,7 +108,7 @@ export default function Scheduling() {
               Escolha a unidade
             </label>
             <div className="grid gap-3">
-              {unidades.map((u) => (
+              {UNIDADES.map((u) => (
                 <button
                   key={u.id}
                   type="button"
@@ -183,9 +155,7 @@ export default function Scheduling() {
                   mode="single"
                   selected={date}
                   onSelect={setDate}
-                  disabled={(date) =>
-                    date < new Date(new Date().setHours(0, 0, 0, 0))
-                  }
+                  disabled={(dateToCheck) => !isDataValida(dateToCheck)}
                   initialFocus
                   locale={ptBR}
                 />
