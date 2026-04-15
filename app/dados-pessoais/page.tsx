@@ -159,7 +159,7 @@ export default function PersonalData() {
           <div className="pt-6">
             {!isFormValid && (
               <p className="text-sm text-red-600 mb-3 text-center">
-                * Preencha todos os campos corretamente para continuar
+                * Preencha todos os campos obrigatórios para continuar
               </p>
             )}
             <button
