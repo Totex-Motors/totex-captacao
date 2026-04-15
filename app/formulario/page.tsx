@@ -1,29 +1,285 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, ArrowLeft } from "lucide-react";
+import { ArrowRight, ArrowLeft, AlertCircle } from "lucide-react";
+
+interface Marca {
+  code: string;
+  name: string;
+}
+
+interface Modelo {
+  code: string;
+  name: string;
+}
+
+interface ModeloAgrupado {
+  model: string;
+  versions: Modelo[];
+}
+
+interface AnoFipe {
+  code: string;
+  name: string;
+}
+
+const ANO_MIN = 1950;
+const ANO_MAX = 2027;
+
+const ANOS_PADRAO = Array.from({ length: ANO_MAX - ANO_MIN + 1 }, (_, i) => ANO_MAX - i);
+
+function normalizarTexto(valor: string): string {
+  return valor.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function extrairModeloBase(nomeCompleto: string): string {
+  const clean = nomeCompleto.trim().replace(/\s+/g, " ");
+  const parts = clean.split(" ");
+  if (parts.length <= 1) return clean;
+
+  const stopTokens = [
+    /^\d/,
+    /^(i|ii|iii|iv|v|vi|vii|viii|ix|x)$/i,
+    /^(1\.0|1\.4|1\.6|1\.8|2\.0|tsi|tgi|mpi|tfsi|flex|turbo|at|mt|cvt)$/i,
+  ];
+
+  const baseParts: string[] = [];
+  for (const part of parts) {
+    if (stopTokens.some((rule) => rule.test(part))) break;
+    baseParts.push(part);
+    if (baseParts.length >= 2) {
+      const nextIndex = parts.indexOf(part) + 1;
+      if (nextIndex < parts.length && stopTokens.some((rule) => rule.test(parts[nextIndex]))) {
+        break;
+      }
+    }
+  }
+
+  return baseParts.length > 0 ? baseParts.join(" ") : parts[0];
+}
+
+function extrairNomeVersao(nomeCompleto: string, modeloBase: string): string {
+  if (!modeloBase) return nomeCompleto;
+  if (nomeCompleto.toLowerCase().startsWith(modeloBase.toLowerCase())) {
+    const restante = nomeCompleto.slice(modeloBase.length).trim();
+    return restante || nomeCompleto;
+  }
+  return nomeCompleto;
+}
 
 export default function CarForm() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     marca: "",
+    marcaNome: "",
     modelo: "",
+    modeloCode: "",
+    versao: "",
+    versaoName: "",
     ano: "",
-    km: "",
-    placa: "",
-    cor: "",
-    observacoes: "",
   });
+
+  const [marcas, setMarcas] = useState<Marca[]>([]);
+  const [modelosAgrupados, setModelosAgrupados] = useState<ModeloAgrupado[]>([]);
+  const [versoes, setVersoes] = useState<Modelo[]>([]);
+  const [anos, setAnos] = useState<number[]>(ANOS_PADRAO);
+
+  const [marcaSelecionada, setMarcaSelecionada] = useState("");
+  const [modeloBaseSelecionado, setModeloBaseSelecionado] = useState("");
+  const [versaoSelecionada, setVersaoSelecionada] = useState("");
+
+  const [loadingMarcas, setLoadingMarcas] = useState(true);
+  const [loadingModelos, setLoadingModelos] = useState(false);
+  const [loadingAnos, setLoadingAnos] = useState(false);
+
+  const [erro, setErro] = useState("");
+
+  // Carrega marcas na montagem do componente
+  useEffect(() => {
+    const carregarMarcas = async () => {
+      try {
+        setLoadingMarcas(true);
+        const response = await fetch("/api/fipe/brands");
+        if (!response.ok) throw new Error("Erro ao buscar marcas");
+        const data = await response.json();
+        setMarcas(data);
+      } catch (error) {
+        console.error("Erro ao carregar marcas:", error);
+        setErro("Erro ao carregar marcas. Tente recarregar a página.");
+      } finally {
+        setLoadingMarcas(false);
+      }
+    };
+
+    carregarMarcas();
+  }, []);
+
+  // Carrega lista flat da FIPE e agrupa por modelo base quando marca muda
+  useEffect(() => {
+    if (!marcaSelecionada) {
+      setModelosAgrupados([]);
+      setVersoes([]);
+      setAnos(ANOS_PADRAO);
+      return;
+    }
+
+    const carregarModelos = async () => {
+      try {
+        setLoadingModelos(true);
+        setErro("");
+        const response = await fetch(`/api/fipe/models?brandId=${marcaSelecionada}`);
+        if (!response.ok) throw new Error("Erro ao buscar modelos");
+        const data = (await response.json()) as Modelo[];
+        const models = Array.isArray(data) ? data : [];
+
+        const groupsMap = new Map<string, { model: string; versionsMap: Map<string, Modelo> }>();
+        models.forEach((item) => {
+          const modelBase = extrairModeloBase(item.name);
+          const modelKey = normalizarTexto(modelBase);
+          const versionName = extrairNomeVersao(item.name, modelBase);
+          const versionKey = normalizarTexto(versionName);
+
+          if (!groupsMap.has(modelKey)) {
+            groupsMap.set(modelKey, {
+              model: modelBase,
+              versionsMap: new Map<string, Modelo>(),
+            });
+          }
+
+          const group = groupsMap.get(modelKey)!;
+          if (!group.versionsMap.has(versionKey)) {
+            group.versionsMap.set(versionKey, {
+              code: item.code,
+              name: versionName,
+            });
+          }
+        });
+
+        const groups = Array.from(groupsMap.values())
+          .map((group) => ({
+            model: group.model,
+            versions: Array.from(group.versionsMap.values()).sort((a, b) =>
+              a.name.localeCompare(b.name, "pt-BR")
+            ),
+          }))
+          .sort((a, b) => a.model.localeCompare(b.model, "pt-BR"));
+
+        setModelosAgrupados(groups);
+      } catch (error) {
+        console.error("Erro ao carregar modelos:", error);
+        setErro("Erro ao carregar modelos. Tente novamente.");
+      } finally {
+        setLoadingModelos(false);
+      }
+    };
+
+    carregarModelos();
+  }, [marcaSelecionada]);
+
+  // Carrega anos quando uma versão (código FIPE) é selecionada
+  useEffect(() => {
+    if (!marcaSelecionada || !formData.modeloCode) {
+      setAnos(ANOS_PADRAO);
+      setFormData((prev) => ({ ...prev, ano: "" }));
+      return;
+    }
+
+    const carregarAnos = async () => {
+      try {
+        setLoadingAnos(true);
+        setErro("");
+        const response = await fetch(
+          `/api/fipe/models/${formData.modeloCode}/years?brandId=${marcaSelecionada}`
+        );
+        if (!response.ok) throw new Error("Erro ao buscar anos");
+        const data = (await response.json()) as AnoFipe[];
+
+        const anosUnicos = Array.from(
+          new Set(
+            data
+              .map((v) => parseInt(v.name.split(" ")[0], 10))
+              .filter((ano) => Number.isFinite(ano) && ano >= ANO_MIN && ano <= ANO_MAX)
+          )
+        ).sort((a, b) => b - a);
+
+        setAnos(anosUnicos.length > 0 ? anosUnicos : ANOS_PADRAO);
+      } catch (error) {
+        console.error("Erro ao carregar anos:", error);
+        setAnos(ANOS_PADRAO);
+        setErro("Erro ao carregar anos, usando faixa padrão.");
+      } finally {
+        setLoadingAnos(false);
+      }
+    };
+
+    carregarAnos();
+  }, [marcaSelecionada, formData.modeloCode]);
+
+  const handleMarcaChange = (marcaCode: string) => {
+    const marca = marcas.find((m) => m.code === marcaCode);
+    setMarcaSelecionada(marcaCode);
+    setModeloBaseSelecionado("");
+    setVersaoSelecionada("");
+    setVersoes([]);
+    setAnos(ANOS_PADRAO);
+
+    setFormData({
+      ...formData,
+      marca: marcaCode,
+      marcaNome: marca?.name || "",
+      modelo: "",
+      modeloCode: "",
+      versao: "",
+      versaoName: "",
+      ano: "",
+    });
+  };
+
+  const handleModeloChange = (modeloBase: string) => {
+    setModeloBaseSelecionado(modeloBase);
+    setVersaoSelecionada("");
+    const grupo = modelosAgrupados.find((g) => g.model === modeloBase);
+    setVersoes(grupo?.versions || []);
+    setAnos(ANOS_PADRAO);
+
+    setFormData({
+      ...formData,
+      modelo: modeloBase,
+      modeloCode: "",
+      versao: "",
+      versaoName: "",
+      ano: "",
+    });
+  };
+
+  const handleVersaoChange = (versaoCode: string) => {
+    setVersaoSelecionada(versaoCode);
+    const versao = versoes.find((v) => v.code === versaoCode);
+
+    setFormData({
+      ...formData,
+      versao: versaoCode,
+      versaoName: versao?.name || "",
+      modeloCode: versao?.code || "",
+      ano: "",
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem("carData", JSON.stringify(formData));
+    const carData = {
+      marca: formData.marcaNome,
+      modelo: formData.modelo,
+      versao: formData.versaoName,
+      anoFabricacao: parseInt(formData.ano, 10),
+    };
+    localStorage.setItem("carData", JSON.stringify(carData));
     router.push("/dados-pessoais");
   };
 
-  const isFormValid = formData.marca && formData.modelo && formData.ano && formData.km;
+  const isFormValid = formData.marca && formData.modelo && formData.versao && formData.ano;
 
   return (
     <div className="min-h-screen bg-white">
@@ -67,6 +323,15 @@ export default function CarForm() {
           onSubmit={handleSubmit}
           className="bg-white border-2 border-gray-100 rounded-2xl p-8 shadow-lg space-y-6"
         >
+          {/* Erro geral */}
+          {erro && (
+            <div className="flex gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <p className="text-sm">{erro}</p>
+            </div>
+          )}
+
+          {/* Marca e Modelo - Lado a lado */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Marca */}
             <div>
@@ -75,25 +340,17 @@ export default function CarForm() {
               </label>
               <select
                 value={formData.marca}
-                onChange={(e) => setFormData({ ...formData, marca: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900"
+                onChange={(e) => handleMarcaChange(e.target.value)}
+                disabled={loadingMarcas}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 required
               >
-                <option value="">Selecione</option>
-                {[
-                  "Chevrolet",
-                  "Fiat",
-                  "Ford",
-                  "Honda",
-                  "Hyundai",
-                  "Nissan",
-                  "Renault",
-                  "Toyota",
-                  "Volkswagen",
-                  "Outro",
-                ].map((marca) => (
-                  <option key={marca} value={marca}>
-                    {marca}
+                <option value="">
+                  {loadingMarcas ? "Carregando..." : "Selecione"}
+                </option>
+                {marcas.map((marca) => (
+                  <option key={marca.code} value={marca.code}>
+                    {marca.name}
                   </option>
                 ))}
               </select>
@@ -104,103 +361,79 @@ export default function CarForm() {
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Modelo *
               </label>
-              <input
-                type="text"
-                value={formData.modelo}
-                onChange={(e) => setFormData({ ...formData, modelo: e.target.value })}
-                placeholder="Ex: Onix, Gol, Civic..."
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent"
-                required
-              />
-            </div>
-
-            {/* Ano */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Ano *
-              </label>
-              <input
-                type="number"
-                value={formData.ano}
-                onChange={(e) => setFormData({ ...formData, ano: e.target.value })}
-                placeholder="2020"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent"
-                required
-              />
-            </div>
-
-            {/* Quilometragem */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Quilometragem *
-              </label>
-              <input
-                type="number"
-                value={formData.km}
-                onChange={(e) => setFormData({ ...formData, km: e.target.value })}
-                placeholder="Ex: 50000"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent"
-                required
-              />
-            </div>
-
-            {/* Placa */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Placa
-              </label>
-              <input
-                type="text"
-                value={formData.placa}
-                onChange={(e) => setFormData({ ...formData, placa: e.target.value.toUpperCase() })}
-                placeholder="ABC-1234"
-                maxLength={8}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent"
-              />
-            </div>
-
-            {/* Cor */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Cor
-              </label>
               <select
-                value={formData.cor}
-                onChange={(e) => setFormData({ ...formData, cor: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900"
+                value={modeloBaseSelecionado}
+                onChange={(e) => handleModeloChange(e.target.value)}
+                disabled={!marcaSelecionada || loadingModelos}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                required
               >
-                <option value="">Selecione</option>
-                {[
-                  "Branco",
-                  "Preto",
-                  "Prata",
-                  "Vermelho",
-                  "Azul",
-                  "Cinza",
-                  "Verde",
-                  "Amarelo",
-                  "Outra",
-                ].map((cor) => (
-                  <option key={cor} value={cor}>
-                    {cor}
+                <option value="">
+                  {!marcaSelecionada
+                    ? "Selecione marca primeiro"
+                    : loadingModelos
+                      ? "Carregando..."
+                      : "Selecione"}
+                </option>
+                {modelosAgrupados.map((modelo) => (
+                  <option key={modelo.model} value={modelo.model}>
+                    {modelo.model}
                   </option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Observações */}
+          {/* Versão */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Observações adicionais
+              Versão *
             </label>
-            <textarea
-              value={formData.observacoes}
-              onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-              placeholder="Informações relevantes sobre o veículo..."
-              rows={4}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent resize-none"
-            />
+            <select
+              value={versaoSelecionada}
+              onChange={(e) => handleVersaoChange(e.target.value)}
+              disabled={!modeloBaseSelecionado}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              required
+            >
+              <option value="">
+                {!modeloBaseSelecionado
+                  ? "Selecione modelo primeiro"
+                  : "Selecione versão"}
+              </option>
+              {versoes.map((versao) => (
+                <option key={versao.code} value={versao.code}>
+                  {versao.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Ano */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Ano de Fabricação *
+            </label>
+            <select
+              value={formData.ano}
+              onChange={(e) => setFormData({ ...formData, ano: e.target.value })}
+              disabled={!versaoSelecionada || loadingAnos}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              required
+            >
+              <option value="">
+                {!versaoSelecionada
+                  ? "Selecione versão primeiro"
+                  : loadingAnos
+                    ? "Carregando anos..."
+                    : "Selecione ano"}
+              </option>
+              {anos.map((ano) => (
+                <option key={ano} value={ano}>
+                  {ano}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Submit Button */}
