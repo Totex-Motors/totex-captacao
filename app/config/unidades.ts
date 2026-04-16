@@ -1,6 +1,4 @@
 // Configuração de unidades
-// Quando tiver o site externo pronto, é só substituir isso por uma chamada à API
-// Ex: const unidades = await fetch('https://seu-site.com/api/unidades')
 
 export interface Unidade {
   id: string;
@@ -8,27 +6,53 @@ export interface Unidade {
   endereco: string;
 }
 
-// ⚠️ HARDCODED POR ENQUANTO - será substituído por API depois
-export const UNIDADES: Unidade[] = [
-  {
-    id: "1",
-    nome: "Totex Motors - Tamboré",
-    endereco: "Av. Piracema, 669 - Tamboré, Barueri - SP, 06460-030 (G4)",
-  },
-  // Adicionar mais unidades aqui conforme ficar pronto no site externo
-];
+type InspectionLocationApi = {
+  id?: string | number;
+  nome?: string;
+  name?: string;
+  endereco?: string;
+  address?: string;
+};
 
-// Função utilitária para buscar unidades (pronto para ser adaptada a API depois)
-export async function getUnidades(): Promise<Unidade[]> {
-  // Por enquanto, apenas retorna a lista hardcoded
-  // Quando tiver o site externo pronto, substitua por:
-  // const response = await fetch('https://seu-site.com/api/unidades');
-  // return await response.json();
+function normalizeLocation(location: InspectionLocationApi): Unidade | null {
+  const id = location.id;
+  const nome = location.nome ?? location.name;
+  const endereco = location.endereco ?? location.address;
 
-  return UNIDADES;
+  if (id === undefined || !nome || !endereco) {
+    return null;
+  }
+
+  return {
+    id: String(id),
+    nome,
+    endereco,
+  };
 }
 
-// Função para buscar uma unidade específica por ID
-export function getUnidadeById(id: string): Unidade | undefined {
-  return UNIDADES.find((u) => u.id === id);
+export async function getUnidades(): Promise<Unidade[]> {
+  const response = await fetch("/api/inspection/locations", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Erro ao buscar unidades de atendimento");
+  }
+
+  const data = (await response.json()) as InspectionLocationApi[];
+
+  if (!Array.isArray(data)) {
+    return [];
+  }
+
+  return data.map(normalizeLocation).filter((u): u is Unidade => u !== null);
+}
+
+export async function getUnidadeById(id: string): Promise<Unidade | undefined> {
+  const unidades = await getUnidades();
+  return unidades.find((u) => u.id === id);
 }
