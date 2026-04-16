@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { Calendar as CalendarIcon, MapPin, ArrowRight, ArrowLeft, Clock } from "lucide-react";
@@ -12,24 +12,101 @@ import {
 } from "@/app/components/ui/popover";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { getHorariosDisponiveis, isDataValida, isHorarioValido, getNomeDia } from "@/app/lib/scheduling-utils";
-import { UNIDADES } from "@/app/config/unidades";
+import { isDataValida, getNomeDia } from "@/app/lib/scheduling-utils";
+import { getUnidades, Unidade } from "@/app/config/unidades";
+import { getAvailableSlots } from "@/app/lib/inspection-slots";
 
 export default function Scheduling() {
   const router = useRouter();
   const [date, setDate] = useState<Date>();
   const [unidade, setUnidade] = useState("");
   const [horario, setHorario] = useState("");
+  const [horariosDisponiveis, setHorariosDisponiveis] = useState<string[]>([]);
+  const [loadingHorarios, setLoadingHorarios] = useState(false);
+  const [horariosError, setHorariosError] = useState<string | null>(null);
+  const [unidades, setUnidades] = useState<Unidade[]>([]);
+  const [loadingUnidades, setLoadingUnidades] = useState(true);
+  const [unidadesError, setUnidadesError] = useState<string | null>(null);
 
-  // Função para filtrar horários disponíveis
-  const getHorariosDisponivelsByDate = () => {
-    if (!date) {
-      return [];
-    }
-    return getHorariosDisponiveis(date);
-  };
+  useEffect(() => {
+    let isMounted = true;
 
-  const horariosDisponiveis = getHorariosDisponivelsByDate();
+    const loadUnidades = async () => {
+      try {
+        setLoadingUnidades(true);
+        setUnidadesError(null);
+        const data = await getUnidades();
+
+        if (isMounted) {
+          setUnidades(data);
+        }
+      } catch (_error) {
+        if (isMounted) {
+          setUnidadesError("Nao foi possivel carregar as unidades. Tente novamente.");
+          setUnidades([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingUnidades(false);
+        }
+      }
+    };
+
+    loadUnidades();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadAvailableSlots = async () => {
+      if (!unidade || !date) {
+        if (isMounted) {
+          setHorariosDisponiveis([]);
+          setHorariosError(null);
+          setHorario("");
+        }
+        return;
+      }
+
+      try {
+        setLoadingHorarios(true);
+        setHorariosError(null);
+        const selectedDate = format(date, "yyyy-MM-dd");
+        const slots = await getAvailableSlots(unidade, selectedDate);
+
+        if (isMounted) {
+          setHorariosDisponiveis(slots);
+          setHorario((prevHorario) =>
+            prevHorario && slots.includes(prevHorario) ? prevHorario : ""
+          );
+        }
+      } catch (error) {
+        if (isMounted) {
+          setHorariosError(
+            error instanceof Error
+              ? error.message
+              : "Nao foi possivel carregar os horarios. Tente novamente."
+          );
+          setHorariosDisponiveis([]);
+          setHorario("");
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingHorarios(false);
+        }
+      }
+    };
+
+    loadAvailableSlots();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [date, unidade]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +117,7 @@ export default function Scheduling() {
       return;
     }
 
-    if (!isHorarioValido(date, horario)) {
+    if (!horariosDisponiveis.includes(horario)) {
       alert("Horário inválido para a data selecionada.");
       return;
     }
@@ -50,14 +127,21 @@ export default function Scheduling() {
       dataBr: format(date, "PPP", { locale: ptBR }),
       diaSemana: getNomeDia(date),
       horario,
-      unidade: UNIDADES.find((u) => u.id === unidade),
+      unidade: unidades.find((u) => u.id === unidade),
     };
     
     localStorage.setItem("schedulingData", JSON.stringify(schedulingData));
     router.push("/confirmacao");
   };
 
-  const isFormValid = date && unidade && horario;
+  const isFormValid =
+    date &&
+    unidade &&
+    horario &&
+    unidades.length > 0 &&
+    !loadingUnidades &&
+    !loadingHorarios &&
+    horariosDisponiveis.includes(horario);
 
   return (
     <div className="min-h-screen bg-white">
@@ -107,23 +191,33 @@ export default function Scheduling() {
               <MapPin className="w-5 h-5 text-[#0d9488]" />
               Escolha a unidade
             </label>
-            <div className="grid gap-3">
-              {UNIDADES.map((u) => (
-                <button
-                  key={u.id}
-                  type="button"
-                  onClick={() => setUnidade(u.id)}
-                  className={`text-left p-4 rounded-lg border-2 transition-all ${
-                    unidade === u.id
-                      ? "border-[#0d9488] bg-[#0d9488]/10"
-                      : "border-gray-200 hover:border-gray-300 bg-white"
-                  }`}
-                >
-                  <p className="font-semibold text-gray-900 mb-1">{u.nome}</p>
-                  <p className="text-sm text-gray-600">{u.endereco}</p>
-                </button>
-              ))}
-            </div>
+            {loadingUnidades ? (
+              <p className="text-gray-500 text-center py-4">Carregando unidades...</p>
+            ) : unidadesError ? (
+              <p className="text-red-600 text-center py-4">{unidadesError}</p>
+            ) : unidades.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">
+                Nenhuma unidade disponivel no momento.
+              </p>
+            ) : (
+              <div className="grid gap-3">
+                {unidades.map((u) => (
+                  <button
+                    key={u.id}
+                    type="button"
+                    onClick={() => setUnidade(u.id)}
+                    className={`text-left p-4 rounded-lg border-2 transition-all ${
+                      unidade === u.id
+                        ? "border-[#0d9488] bg-[#0d9488]/10"
+                        : "border-gray-200 hover:border-gray-300 bg-white"
+                    }`}
+                  >
+                    <p className="font-semibold text-gray-900 mb-1">{u.nome}</p>
+                    <p className="text-sm text-gray-600">{u.endereco}</p>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Data */}
@@ -169,9 +263,17 @@ export default function Scheduling() {
               <Clock className="w-5 h-5 text-[#0d9488]" />
               Escolha o horário
             </label>
-            {horariosDisponiveis.length === 0 ? (
+            {!unidade || !date ? (
               <p className="text-gray-500 text-center py-4">
-                Não há horários disponíveis para hoje. Selecione outra data.
+                Selecione unidade e data para ver os horários disponíveis.
+              </p>
+            ) : loadingHorarios ? (
+              <p className="text-gray-500 text-center py-4">Carregando horários...</p>
+            ) : horariosError ? (
+              <p className="text-red-600 text-center py-4">{horariosError}</p>
+            ) : horariosDisponiveis.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">
+                Não há horários disponíveis para esta unidade e data.
               </p>
             ) : (
               <div className="grid grid-cols-3 gap-3">

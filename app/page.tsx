@@ -9,18 +9,36 @@ export default function Home() {
   const router = useRouter();
   const [currentPartnerIndex, setCurrentPartnerIndex] = useState(0);
 
-  const partnerLogos = [
-    "/imports/image-20.png",
-    "/imports/image-21.png"
+  const partnerSlides = [
+    {
+      src: "/imports/image-20.png",
+      alt: "Quest Multimarcas",
+      imageClassName: "max-h-20 md:max-h-24 max-w-[70%]",
+    },
+    {
+      src: "/imports/image-21.png",
+      alt: "Firstline",
+      imageClassName: "max-h-10 md:max-h-12 max-w-[70%]",
+    },
+    {
+      src: "/imports/image-7.png",
+      alt: "Parceiro Image 7",
+      imageClassName: "max-h-12 md:max-h-14 max-w-[84%]",
+    },
+    {
+      src: "/imports/image-9.png",
+      alt: "Parceiro Image 9",
+      imageClassName: "max-h-12 md:max-h-14 max-w-[84%]",
+    },
   ];
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentPartnerIndex((prevIndex) => (prevIndex + 1) % partnerLogos.length);
+      setCurrentPartnerIndex((prevIndex) => (prevIndex + 1) % partnerSlides.length);
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [partnerLogos.length]);
+  }, [partnerSlides.length]);
 
   const features = [
     {
@@ -90,7 +108,7 @@ export default function Home() {
               />
               
               <motion.img 
-                src="/imports/Gemini_Generated_Image_aqldi1aqldi1aqld.png" 
+                src="/imports/fotodomarcelo.png" 
                 alt="Vendemos seu carro em até 30 minutos - TOTEX Motors" 
                 className="w-full h-auto object-cover relative z-10"
                 animate={{ 
@@ -142,7 +160,7 @@ export default function Home() {
               </motion.h2>
               
               <div className="relative overflow-hidden rounded-3xl border-4 border-[#0d9488] bg-white shadow-2xl">
-                {partnerLogos.map((image, index) => (
+                {partnerSlides.map((slide, index) => (
                   <motion.div
                     key={index}
                     initial={{ opacity: 0 }}
@@ -151,13 +169,13 @@ export default function Home() {
                       scale: currentPartnerIndex === index ? 1 : 1.1,
                     }}
                     transition={{ duration: 0.8 }}
-                    className="absolute inset-0 flex items-center justify-center p-8"
+                    className="absolute inset-0 flex items-center justify-center p-6"
                     style={{ pointerEvents: currentPartnerIndex === index ? "auto" : "none" }}
                   >
                     <img
-                      src={image}
-                      alt={`Parceiro ${index + 1}`}
-                      className="w-full h-full object-contain"
+                      src={slide.src}
+                      alt={slide.alt}
+                      className={`w-auto h-auto object-contain ${slide.imageClassName}`}
                     />
                   </motion.div>
                 ))}

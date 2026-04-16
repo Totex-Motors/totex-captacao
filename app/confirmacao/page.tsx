@@ -10,10 +10,25 @@ export default function Confirmation() {
   const [carData, setCarData] = useState<any>(null);
   const [personalData, setPersonalData] = useState<any>(null);
   const [schedulingData, setSchedulingData] = useState<any>(null);
-  const [countdown, setCountdown] = useState(15);
+  const [countdown, setCountdown] = useState(10);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState(false);
+
+  const getSubmissionKey = (car: any, personal: any, scheduling: any) => {
+    return JSON.stringify({
+      customerName: personal?.nome ?? "",
+      customerEmail: personal?.email ?? "",
+      customerPhone: personal?.whatsapp ?? "",
+      vehicleBrand: car?.marca ?? "",
+      vehicleModel: car?.modelo ?? "",
+      vehicleVersion: car?.versao ?? "",
+      vehicleYear: car?.anoFabricacao ?? "",
+      locationId: scheduling?.unidade?.id ?? "",
+      scheduledDate: scheduling?.data ?? "",
+      scheduledTime: scheduling?.horario ?? "",
+    });
+  };
 
   useEffect(() => {
     const car = localStorage.getItem("carData");
@@ -26,29 +41,48 @@ export default function Confirmation() {
 
     // Enviar agendamento assim que o componente montar
     if (car && personal && scheduling) {
-      enviarAgendamento(JSON.parse(car), JSON.parse(personal), JSON.parse(scheduling));
+      const parsedCar = JSON.parse(car);
+      const parsedPersonal = JSON.parse(personal);
+      const parsedScheduling = JSON.parse(scheduling);
+
+      const submissionKey = getSubmissionKey(parsedCar, parsedPersonal, parsedScheduling);
+      const completedKey = sessionStorage.getItem("appointmentSubmissionCompleted");
+      const inProgressKey = sessionStorage.getItem("appointmentSubmissionInProgress");
+
+      if (completedKey === submissionKey || inProgressKey === submissionKey) {
+        return;
+      }
+
+      sessionStorage.setItem("appointmentSubmissionInProgress", submissionKey);
+      enviarAgendamento(parsedCar, parsedPersonal, parsedScheduling, submissionKey);
     }
   }, []);
 
-  const enviarAgendamento = async (car: any, personal: any, scheduling: any) => {
+  useEffect(() => {
+    if (sucesso && countdown === 0) {
+      handleReturnHome();
+    }
+  }, [sucesso, countdown]);
+
+  const enviarAgendamento = async (car: any, personal: any, scheduling: any, submissionKey?: string) => {
     try {
       setEnviando(true);
       setErro("");
 
       const payload = {
-        nome: personal.nome,
-        email: personal.email,
-        telefone: personal.whatsapp,
-        marca: car.marca,
-        modelo: car.modelo,
-        versao: car.versao,
-        anoFabricacao: car.anoFabricacao,
-        localVistoria: scheduling.unidade?.nome,
-        dataVistoria: scheduling.data,
-        horarioVistoria: scheduling.horario,
+        customerName: personal.nome,
+        customerEmail: personal.email,
+        customerPhone: personal.whatsapp,
+        vehicleBrand: car.marca,
+        vehicleModel: car.modelo,
+        vehicleVersion: car.versao,
+        vehicleYear: car.anoFabricacao,
+        locationId: scheduling.unidade?.id,
+        scheduledDate: scheduling.data,
+        scheduledTime: scheduling.horario,
       };
 
-      const response = await fetch("/api/agendamento", {
+      const response = await fetch("/api/inspection/appointments", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -56,11 +90,20 @@ export default function Confirmation() {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.erro || "Erro ao enviar agendamento");
+      const responseData = await response.json();
+
+      if (!response.ok || responseData?.success === false) {
+        throw new Error(
+          responseData?.message || responseData?.error || "Erro ao enviar agendamento"
+        );
       }
 
+      if (submissionKey) {
+        sessionStorage.setItem("appointmentSubmissionCompleted", submissionKey);
+        sessionStorage.removeItem("appointmentSubmissionInProgress");
+      }
+
+      setEnviando(false);
       setSucesso(true);
 
       // Inicia contagem regressiva
@@ -68,7 +111,6 @@ export default function Confirmation() {
         setCountdown((prev) => {
           if (prev <= 1) {
             clearInterval(timer);
-            handleReturnHome();
             return 0;
           }
           return prev - 1;
@@ -78,12 +120,15 @@ export default function Confirmation() {
       return () => clearInterval(timer);
     } catch (error) {
       console.error("Erro ao enviar agendamento:", error);
+      sessionStorage.removeItem("appointmentSubmissionInProgress");
       setErro(error instanceof Error ? error.message : "Erro ao enviar agendamento");
       setEnviando(false);
     }
   };
 
   const handleReturnHome = () => {
+    sessionStorage.removeItem("appointmentSubmissionInProgress");
+    sessionStorage.removeItem("appointmentSubmissionCompleted");
     localStorage.removeItem("carData");
     localStorage.removeItem("personalData");
     localStorage.removeItem("schedulingData");
@@ -92,10 +137,13 @@ export default function Confirmation() {
 
   const handleRetry = () => {
     if (carData && personalData && schedulingData) {
+      const submissionKey = getSubmissionKey(carData, personalData, schedulingData);
+      sessionStorage.removeItem("appointmentSubmissionCompleted");
+      sessionStorage.setItem("appointmentSubmissionInProgress", submissionKey);
       setErro("");
       setSucesso(false);
-      setCountdown(15);
-      enviarAgendamento(carData, personalData, schedulingData);
+      setCountdown(10);
+      enviarAgendamento(carData, personalData, schedulingData, submissionKey);
     }
   };
 
@@ -154,13 +202,22 @@ export default function Confirmation() {
                     {erro}
                   </p>
                 </>
-              ) : (
+              ) : sucesso ? (
                 <>
                   <h1 className="text-4xl font-bold text-gray-900 mb-3">
-                    Agendamento confirmado!
+                    Agendamento concluído!
                   </h1>
-                  <p className="text-lg text-gray-600">
-                    Seu horário está reservado e uma confirmação foi enviada
+                  <p className="text-lg text-gray-600 max-w-xl mx-auto">
+                    Seu horário foi reservado com sucesso. Você vai receber no e-mail as informações detalhadas do agendamento.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h1 className="text-2xl font-bold text-gray-900 mb-3">
+                    Preparando confirmação...
+                  </h1>
+                  <p className="text-lg text-gray-600 max-w-xl mx-auto">
+                    Estamos validando os dados do agendamento.
                   </p>
                 </>
               )}
@@ -168,7 +225,7 @@ export default function Confirmation() {
           </div>
 
           {/* Details Card */}
-          {!enviando && (
+          {!enviando && (sucesso || !!erro) && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
