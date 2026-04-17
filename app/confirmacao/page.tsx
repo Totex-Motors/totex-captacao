@@ -5,12 +5,14 @@ import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Calendar, MapPin, Clock, Car, Home, AlertCircle } from "lucide-react";
 
+const AUTO_RETURN_SECONDS = 40;
+
 export default function Confirmation() {
   const router = useRouter();
   const [carData, setCarData] = useState<any>(null);
   const [personalData, setPersonalData] = useState<any>(null);
   const [schedulingData, setSchedulingData] = useState<any>(null);
-  const [countdown, setCountdown] = useState(10);
+  const [countdown, setCountdown] = useState(AUTO_RETURN_SECONDS);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState(false);
@@ -142,7 +144,7 @@ export default function Confirmation() {
       sessionStorage.setItem("appointmentSubmissionInProgress", submissionKey);
       setErro("");
       setSucesso(false);
-      setCountdown(10);
+      setCountdown(AUTO_RETURN_SECONDS);
       enviarAgendamento(carData, personalData, schedulingData, submissionKey);
     }
   };

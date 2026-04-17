@@ -94,33 +94,25 @@ export default function Home() {
               transition={{ delay: 0.3, duration: 0.6 }}
               className="relative -mx-6"
             >
-              {/* Pulsating green background */}
-              <motion.div
-                animate={{ 
-                  opacity: [0.3, 0.5, 0.3],
-                }}
-                transition={{ 
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-                className="absolute inset-0 bg-[#0d9488] rounded-2xl"
-              />
-              
               <motion.img 
                 src="/imports/fotodomarcelo.png" 
                 alt="Vendemos seu carro em até 30 minutos - TOTEX Motors" 
-                className="w-full h-auto object-cover relative z-10"
-                animate={{ 
-                  scale: [1, 1.02, 1],
-                }}
-                transition={{ 
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
+                className="w-[90%] h-auto object-cover relative z-10 mx-auto"
               />
             </motion.div>
+
+            {/* CTA Button */}
+            <motion.button
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.45 }}
+              onClick={() => router.push("/formulario")}
+              whileTap={{ scale: 0.98 }}
+              className="w-full bg-gradient-to-r from-[#16a34a] to-[#15803d] hover:from-[#15803d] hover:to-[#166534] text-white font-black py-7 px-10 rounded-2xl transition-all shadow-2xl hover:shadow-3xl flex items-center justify-center gap-4 text-2xl"
+            >
+              VENDER MEU CARRO AGORA
+              <ArrowRight className="w-7 h-7" />
+            </motion.button>
 
             {/* Features Grid */}
             <motion.div
@@ -135,13 +127,13 @@ export default function Home() {
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.7 + index * 0.1 }}
-                  className="bg-gradient-to-br from-[#0d9488] to-[#0f766e] rounded-2xl p-4 shadow-xl text-center"
+                  className="bg-white border border-slate-200 rounded-2xl p-4 shadow-lg text-center"
                 >
-                  <feature.icon className="w-8 h-8 text-white mx-auto mb-2" />
-                  <p className="font-bold text-white text-sm leading-tight">
+                  <feature.icon className="w-8 h-8 text-[#0b6c65] mx-auto mb-2" />
+                  <p className="font-bold text-[#0b6c65] text-sm leading-tight">
                     {feature.title}
                   </p>
-                  <p className="text-xs text-white/90 leading-tight mt-1">
+                  <p className="text-xs text-slate-600 leading-tight mt-1">
                     {feature.subtitle}
                   </p>
                 </motion.div>
@@ -154,12 +146,12 @@ export default function Home() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 }}
-                className="text-center text-lg font-bold text-gray-700 mb-4"
+                className="text-center text-lg font-bold text-slate-700 mb-4"
               >
                 Parceiros Oficiais
               </motion.h2>
               
-              <div className="relative overflow-hidden rounded-3xl border-4 border-[#0d9488] bg-white shadow-2xl">
+              <div className="relative overflow-hidden rounded-3xl border-2 border-slate-200 bg-white shadow-xl">
                 {partnerSlides.map((slide, index) => (
                   <motion.div
                     key={index}
@@ -183,19 +175,6 @@ export default function Home() {
                 <div className="w-full h-48"></div>
               </div>
             </div>
-
-            {/* CTA Button */}
-            <motion.button
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.9 }}
-              onClick={() => router.push("/formulario")}
-              whileTap={{ scale: 0.98 }}
-              className="w-full bg-gradient-to-r from-[#0d9488] to-[#0f766e] hover:from-[#0f766e] hover:to-[#115e59] text-white font-black py-6 px-8 rounded-2xl transition-all shadow-2xl hover:shadow-3xl flex items-center justify-center gap-3 text-xl"
-            >
-              VENDER MEU CARRO AGORA
-              <ArrowRight className="w-6 h-6" />
-            </motion.button>
 
             <motion.p
               initial={{ opacity: 0 }}
