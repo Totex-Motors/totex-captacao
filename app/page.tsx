@@ -68,11 +68,11 @@ export default function Home() {
           transition={{ duration: 0.6 }}
           className="max-w-md mx-auto"
         >
-          <div className="bg-gradient-to-r from-[#0d9488] to-[#0f766e] rounded-3xl shadow-2xl px-8 py-6">
+          <div className="bg-gradient-to-r from-[#0d9488] to-[#0f766e] rounded-3xl shadow-2xl px-8 py-6 h-48 flex items-center justify-center">
             <img 
               src="/imports/image-3.png" 
               alt="TOTEX Motors" 
-              className="h-20 mx-auto object-contain brightness-0 invert" 
+              className="h-32 mx-auto object-contain brightness-0 invert" 
             />
           </div>
         </motion.div>
@@ -98,6 +98,8 @@ export default function Home() {
                 src="/imports/fotodomarcelo.png" 
                 alt="Vendemos seu carro em até 30 minutos - TOTEX Motors" 
                 className="w-[90%] h-auto object-cover relative z-10 mx-auto"
+                animate={{ scale: [1, 0.90, 1] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
               />
             </motion.div>
 
