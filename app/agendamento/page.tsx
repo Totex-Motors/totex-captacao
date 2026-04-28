@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { Calendar as CalendarIcon, MapPin, ArrowRight, ArrowLeft, Clock } from "lucide-react";
@@ -10,82 +10,138 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/app/components/ui/popover";
-import { format, isToday, addMinutes } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-
-const unidades = [
-  { 
-    id: "1", 
-    nome: "Totex Motors - Tamboré", 
-    endereco: "Av. Piracema, 669 - Tamboré, Barueri - SP, 06460-030 (G4)" 
-  },
-];
-
-const todosHorarios = [
-  "10:00",
-  "10:30",
-  "11:00",
-  "11:30",
-  "12:00",
-  "12:30",
-  "13:00",
-  "13:30",
-  "14:00",
-  "14:30",
-  "15:00",
-  "15:30",
-  "16:00",
-  "16:30",
-  "17:00",
-  "17:30",
-  "18:00",
-  "18:30",
-  "19:00",
-  "19:30",
-  "20:00",
-];
+import { isDataValida, getNomeDia } from "@/app/lib/scheduling-utils";
+import { getUnidades, Unidade } from "@/app/config/unidades";
+import { getAvailableSlots } from "@/app/lib/inspection-slots";
 
 export default function Scheduling() {
   const router = useRouter();
   const [date, setDate] = useState<Date>();
   const [unidade, setUnidade] = useState("");
   const [horario, setHorario] = useState("");
+  const [horariosDisponiveis, setHorariosDisponiveis] = useState<string[]>([]);
+  const [loadingHorarios, setLoadingHorarios] = useState(false);
+  const [horariosError, setHorariosError] = useState<string | null>(null);
+  const [unidades, setUnidades] = useState<Unidade[]>([]);
+  const [loadingUnidades, setLoadingUnidades] = useState(true);
+  const [unidadesError, setUnidadesError] = useState<string | null>(null);
 
-  // Função para filtrar horários disponíveis
-  const getHorariosDisponiveis = () => {
-    if (!date || !isToday(date)) {
-      return todosHorarios;
-    }
+  useEffect(() => {
+    let isMounted = true;
 
-    // Se for hoje, filtrar horários que são pelo menos 30 minutos no futuro
-    const now = new Date();
-    const minTime = addMinutes(now, 30);
-    const minHours = minTime.getHours();
-    const minMinutes = minTime.getMinutes();
+    const loadUnidades = async () => {
+      try {
+        setLoadingUnidades(true);
+        setUnidadesError(null);
+        const data = await getUnidades();
 
-    return todosHorarios.filter((horario) => {
-      const [hours, minutes] = horario.split(":").map(Number);
-      const horarioTime = hours * 60 + minutes;
-      const minTimeInMinutes = minHours * 60 + minMinutes;
-      
-      return horarioTime >= minTimeInMinutes;
-    });
-  };
+        if (isMounted) {
+          setUnidades(data);
+        }
+      } catch (_error) {
+        if (isMounted) {
+          setUnidadesError("Nao foi possivel carregar as unidades. Tente novamente.");
+          setUnidades([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingUnidades(false);
+        }
+      }
+    };
 
-  const horariosDisponiveis = getHorariosDisponiveis();
+    loadUnidades();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadAvailableSlots = async () => {
+      if (!unidade || !date) {
+        if (isMounted) {
+          setHorariosDisponiveis([]);
+          setHorariosError(null);
+          setHorario("");
+        }
+        return;
+      }
+
+      try {
+        setLoadingHorarios(true);
+        setHorariosError(null);
+        const selectedDate = format(date, "yyyy-MM-dd");
+        const slots = await getAvailableSlots(unidade, selectedDate);
+
+        if (isMounted) {
+          setHorariosDisponiveis(slots);
+          setHorario((prevHorario) =>
+            prevHorario && slots.includes(prevHorario) ? prevHorario : ""
+          );
+        }
+      } catch (error) {
+        if (isMounted) {
+          setHorariosError(
+            error instanceof Error
+              ? error.message
+              : "Nao foi possivel carregar os horarios. Tente novamente."
+          );
+          setHorariosDisponiveis([]);
+          setHorario("");
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingHorarios(false);
+        }
+      }
+    };
+
+    loadAvailableSlots();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [date, unidade]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validações finais
+    if (!date || !isDataValida(date)) {
+      alert("Data inválida. Não é permitido agendar em domingo ou no passado.");
+      return;
+    }
+
+    if (!horariosDisponiveis.includes(horario)) {
+      alert("Horário inválido para a data selecionada.");
+      return;
+    }
+
     const schedulingData = {
-      date: date?.toISOString(),
-      unidade: unidades.find((u) => u.id === unidade),
+      data: format(date, "yyyy-MM-dd"),
+      dataBr: format(date, "PPP", { locale: ptBR }),
+      diaSemana: getNomeDia(date),
       horario,
+      unidade: unidades.find((u) => u.id === unidade),
     };
+    
     localStorage.setItem("schedulingData", JSON.stringify(schedulingData));
     router.push("/confirmacao");
   };
 
-  const isFormValid = date && unidade && horario;
+  const isFormValid =
+    date &&
+    unidade &&
+    horario &&
+    unidades.length > 0 &&
+    !loadingUnidades &&
+    !loadingHorarios &&
+    horariosDisponiveis.includes(horario);
 
   return (
     <div className="min-h-screen bg-white">
@@ -135,23 +191,33 @@ export default function Scheduling() {
               <MapPin className="w-5 h-5 text-[#0d9488]" />
               Escolha a unidade
             </label>
-            <div className="grid gap-3">
-              {unidades.map((u) => (
-                <button
-                  key={u.id}
-                  type="button"
-                  onClick={() => setUnidade(u.id)}
-                  className={`text-left p-4 rounded-lg border-2 transition-all ${
-                    unidade === u.id
-                      ? "border-[#0d9488] bg-[#0d9488]/10"
-                      : "border-gray-200 hover:border-gray-300 bg-white"
-                  }`}
-                >
-                  <p className="font-semibold text-gray-900 mb-1">{u.nome}</p>
-                  <p className="text-sm text-gray-600">{u.endereco}</p>
-                </button>
-              ))}
-            </div>
+            {loadingUnidades ? (
+              <p className="text-gray-500 text-center py-4">Carregando unidades...</p>
+            ) : unidadesError ? (
+              <p className="text-red-600 text-center py-4">{unidadesError}</p>
+            ) : unidades.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">
+                Nenhuma unidade disponivel no momento.
+              </p>
+            ) : (
+              <div className="grid gap-3">
+                {unidades.map((u) => (
+                  <button
+                    key={u.id}
+                    type="button"
+                    onClick={() => setUnidade(u.id)}
+                    className={`text-left p-4 rounded-lg border-2 transition-all ${
+                      unidade === u.id
+                        ? "border-[#0d9488] bg-[#0d9488]/10"
+                        : "border-gray-200 hover:border-gray-300 bg-white"
+                    }`}
+                  >
+                    <p className="font-semibold text-gray-900 mb-1">{u.nome}</p>
+                    <p className="text-sm text-gray-600">{u.endereco}</p>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Data */}
@@ -183,9 +249,7 @@ export default function Scheduling() {
                   mode="single"
                   selected={date}
                   onSelect={setDate}
-                  disabled={(date) =>
-                    date < new Date(new Date().setHours(0, 0, 0, 0))
-                  }
+                  disabled={(dateToCheck) => !isDataValida(dateToCheck)}
                   initialFocus
                   locale={ptBR}
                 />
@@ -199,9 +263,17 @@ export default function Scheduling() {
               <Clock className="w-5 h-5 text-[#0d9488]" />
               Escolha o horário
             </label>
-            {horariosDisponiveis.length === 0 ? (
+            {!unidade || !date ? (
               <p className="text-gray-500 text-center py-4">
-                Não há horários disponíveis para hoje. Selecione outra data.
+                Selecione unidade e data para ver os horários disponíveis.
+              </p>
+            ) : loadingHorarios ? (
+              <p className="text-gray-500 text-center py-4">Carregando horários...</p>
+            ) : horariosError ? (
+              <p className="text-red-600 text-center py-4">{horariosError}</p>
+            ) : horariosDisponiveis.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">
+                Não há horários disponíveis para esta unidade e data.
               </p>
             ) : (
               <div className="grid grid-cols-3 gap-3">
