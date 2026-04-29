@@ -25,13 +25,12 @@ export default function Home() {
             src="/imports/fotocaratotex.png"
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute right-0 top-0 select-none"
-            style={{ width: "clamp(140px, 44vw, 240px)" }}
+            className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 select-none"
+            style={{ width: "clamp(280px, 65vw, 500px)" }}
           />
 
           <div
             className="relative z-10"
-            style={{ paddingRight: "clamp(130px, 40vw, 220px)" }}
           >
             <h1
               className="font-serif text-teal-400 leading-[0.88]"
