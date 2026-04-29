@@ -8,82 +8,15 @@
   box-sizing: border-box;
 }
 
+/*
+ * Totem Android: Chrome reporta viewport phone-sized (~360-412px CSS).
+ * Usamos clamp() com vw para que tudo escale proporcionalmente ao viewport,
+ * independente da resolução física ou DPR do dispositivo.
+ * clamp(mín, 5vw, máx) → 18px @ 360px · 20px @ 400px · 24px @ 480px
+ */
 html {
-  font-size: 16px;
+  font-size: clamp(18px, 5vw, 24px);
   scroll-behavior: smooth;
-}
-
-/* Escala proporcional para telas de totem (acima de desktop). */
-@media (min-width: 1921px) {
-  html {
-    font-size: clamp(22px, 0.95vw + 8px, 30px);
-  }
-}
-
-/* Fallback para totens 4K com escala do sistema (viewport CSS menor). */
-@media (min-width: 1700px) and (min-height: 900px) and (min-resolution: 1.25dppx) {
-  html {
-    font-size: clamp(22px, 1vw + 8px, 32px);
-  }
-}
-
-@media (min-width: 2560px) {
-  html {
-    font-size: clamp(28px, 1.1vw + 8px, 38px);
-  }
-}
-
-@media (min-width: 3840px) {
-  html {
-    font-size: clamp(38px, 1.35vw + 8px, 52px);
-  }
-}
-
-@media (min-width: 5120px) {
-  html {
-    font-size: 56px;
-  }
-}
-
-/* Em resoluções de totem ultra-wide, aumenta o espaço horizontal útil. */
-@media (min-width: 3000px), (min-width: 1700px) and (min-height: 900px) and (min-resolution: 1.25dppx) {
-  .max-w-md {
-    max-width: min(78vw, 86rem) !important;
-  }
-
-  .max-w-xl {
-    max-width: min(86vw, 108rem) !important;
-  }
-
-  .max-w-2xl {
-    max-width: min(92vw, 132rem) !important;
-  }
-}
-
-/* Regra específica para totem 2:1 (ex.: 3840x1920), mesmo com escala do SO. */
-@media (min-width: 1400px) and (min-aspect-ratio: 2/1) {
-  html {
-    font-size: clamp(30px, 1.6vw + 8px, 48px);
-  }
-
-  .max-w-md,
-  .max-w-xl,
-  .max-w-2xl {
-    max-width: 96vw !important;
-  }
-}
-
-/* Expansão horizontal global para todas as resoluções. */
-.max-w-md {
-  max-width: min(94vw, 58rem) !important;
-}
-
-.max-w-xl {
-  max-width: min(95vw, 72rem) !important;
-}
-
-.max-w-2xl {
-  max-width: min(96vw, 96rem) !important;
 }
 
 body {
@@ -92,9 +25,4 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
 }

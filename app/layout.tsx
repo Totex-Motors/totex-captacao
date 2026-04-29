@@ -1,9 +1,17 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import FullscreenManager from "./components/FullscreenManager";
 
 export const metadata: Metadata = {
   title: "Totex Captação",
   description: "Plataforma de captação automotiva Totex",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -13,7 +21,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body>{children}</body>
+      <body>
+        <FullscreenManager />
+        {children}
+      </body>
     </html>
   );
 }

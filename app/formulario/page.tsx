@@ -283,36 +283,36 @@ export default function CarForm() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-2xl mx-auto px-6 py-8">
+      <div className="w-full px-5 py-6">
         {/* Header */}
-        <div className="mb-10">
+        <div className="mb-8">
           <button
             onClick={() => router.push("/")}
-            className="flex items-center gap-2 text-[#0d9488] hover:text-[#0f766e] mb-8 transition-colors font-semibold"
+            className="flex items-center gap-2 text-[#0d9488] hover:text-[#0f766e] mb-6 transition-colors font-semibold text-base"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-6 h-6" />
             <span>Voltar</span>
           </button>
 
-          <div className="mb-8 bg-white border-2 border-gray-100 rounded-2xl p-6 shadow-lg">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#0d9488] to-[#0f766e] text-white rounded-full flex items-center justify-center font-bold shadow-lg">
+          <div className="mb-6 bg-white border-2 border-gray-100 rounded-2xl p-5 shadow-lg">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-11 h-11 bg-gradient-to-br from-[#0d9488] to-[#0f766e] text-white rounded-full flex items-center justify-center font-bold text-lg shadow-lg">
                 1
               </div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900">
                 Dados do veículo
               </h1>
             </div>
-            <p className="text-gray-600 ml-13">
+            <p className="text-base text-gray-600 ml-14">
               Preencha as informações sobre o seu carro
             </p>
           </div>
 
           {/* Progress */}
           <div className="flex gap-2">
-            <div className="flex-1 h-2 bg-gradient-to-r from-[#0d9488] to-[#0f766e] rounded-full shadow-md"></div>
-            <div className="flex-1 h-2 bg-gray-200 rounded-full"></div>
-            <div className="flex-1 h-2 bg-gray-200 rounded-full"></div>
+            <div className="flex-1 h-3 bg-gradient-to-r from-[#0d9488] to-[#0f766e] rounded-full shadow-md"></div>
+            <div className="flex-1 h-3 bg-gray-200 rounded-full"></div>
+            <div className="flex-1 h-3 bg-gray-200 rounded-full"></div>
           </div>
         </div>
 
@@ -321,79 +321,76 @@ export default function CarForm() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           onSubmit={handleSubmit}
-          className="bg-white border-2 border-gray-100 rounded-2xl p-8 shadow-lg space-y-6"
+          className="bg-white border-2 border-gray-100 rounded-2xl p-5 shadow-lg space-y-5"
         >
           {/* Erro geral */}
           {erro && (
             <div className="flex gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <p className="text-sm">{erro}</p>
+              <AlertCircle className="w-6 h-6 flex-shrink-0 mt-0.5" />
+              <p className="text-base">{erro}</p>
             </div>
           )}
 
-          {/* Marca e Modelo - Lado a lado */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Marca */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Marca *
-              </label>
-              <select
-                value={formData.marca}
-                onChange={(e) => handleMarcaChange(e.target.value)}
-                disabled={loadingMarcas}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                required
-              >
-                <option value="">
-                  {loadingMarcas ? "Carregando..." : "Selecione"}
+          {/* Marca */}
+          <div>
+            <label className="block text-base font-semibold text-gray-700 mb-2">
+              Marca *
+            </label>
+            <select
+              value={formData.marca}
+              onChange={(e) => handleMarcaChange(e.target.value)}
+              disabled={loadingMarcas}
+              className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900 text-base disabled:bg-gray-100 disabled:cursor-not-allowed"
+              required
+            >
+              <option value="">
+                {loadingMarcas ? "Carregando..." : "Selecione"}
+              </option>
+              {marcas.map((marca) => (
+                <option key={marca.code} value={marca.code}>
+                  {marca.name}
                 </option>
-                {marcas.map((marca) => (
-                  <option key={marca.code} value={marca.code}>
-                    {marca.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+              ))}
+            </select>
+          </div>
 
-            {/* Modelo */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Modelo *
-              </label>
-              <select
-                value={modeloBaseSelecionado}
-                onChange={(e) => handleModeloChange(e.target.value)}
-                disabled={!marcaSelecionada || loadingModelos}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                required
-              >
-                <option value="">
-                  {!marcaSelecionada
-                    ? "Selecione marca primeiro"
-                    : loadingModelos
-                      ? "Carregando..."
-                      : "Selecione"}
+          {/* Modelo */}
+          <div>
+            <label className="block text-base font-semibold text-gray-700 mb-2">
+              Modelo *
+            </label>
+            <select
+              value={modeloBaseSelecionado}
+              onChange={(e) => handleModeloChange(e.target.value)}
+              disabled={!marcaSelecionada || loadingModelos}
+              className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900 text-base disabled:bg-gray-100 disabled:cursor-not-allowed"
+              required
+            >
+              <option value="">
+                {!marcaSelecionada
+                  ? "Selecione marca primeiro"
+                  : loadingModelos
+                    ? "Carregando..."
+                    : "Selecione"}
+              </option>
+              {modelosAgrupados.map((modelo) => (
+                <option key={modelo.model} value={modelo.model}>
+                  {modelo.model}
                 </option>
-                {modelosAgrupados.map((modelo) => (
-                  <option key={modelo.model} value={modelo.model}>
-                    {modelo.model}
-                  </option>
-                ))}
-              </select>
-            </div>
+              ))}
+            </select>
           </div>
 
           {/* Versão */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-base font-semibold text-gray-700 mb-2">
               Versão *
             </label>
             <select
               value={versaoSelecionada}
               onChange={(e) => handleVersaoChange(e.target.value)}
               disabled={!modeloBaseSelecionado}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900 text-base disabled:bg-gray-100 disabled:cursor-not-allowed"
               required
             >
               <option value="">
@@ -411,14 +408,14 @@ export default function CarForm() {
 
           {/* Ano */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-base font-semibold text-gray-700 mb-2">
               Ano de Fabricação *
             </label>
             <select
               value={formData.ano}
               onChange={(e) => setFormData({ ...formData, ano: e.target.value })}
               disabled={!versaoSelecionada || loadingAnos}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900 text-base disabled:bg-gray-100 disabled:cursor-not-allowed"
               required
             >
               <option value="">
@@ -437,19 +434,19 @@ export default function CarForm() {
           </div>
 
           {/* Submit Button */}
-          <div className="pt-6">
+          <div className="pt-4">
             {!isFormValid && (
-              <p className="text-sm text-red-600 mb-3 text-center">
+              <p className="text-base text-red-600 mb-3 text-center">
                 * Preencha os campos obrigatórios para continuar
               </p>
             )}
             <button
               type="submit"
               disabled={!isFormValid}
-              className="w-full bg-gradient-to-r from-[#0d9488] to-[#0f766e] hover:from-[#0f766e] hover:to-[#115e59] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-4 px-8 rounded-lg transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-lg"
+              className="w-full bg-gradient-to-r from-[#0d9488] to-[#0f766e] hover:from-[#0f766e] hover:to-[#115e59] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-5 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-xl"
             >
               Continuar
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-6 h-6" />
             </button>
           </div>
         </motion.form>
