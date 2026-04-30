@@ -30,7 +30,7 @@ export default function Home() {
 
         {/* Hero — ocupa o espaço restante */}
         <section
-          className="relative flex-1 flex flex-col justify-center"
+          className="relative flex-1 flex flex-col justify-end"
           style={{ minHeight: 0 }}
         >
           <img
@@ -39,15 +39,16 @@ export default function Home() {
             aria-hidden="true"
             className="pointer-events-none absolute right-0 select-none"
             style={{
-              height: "85%",
+              height: "84%",
               width: "auto",
-              top: "50%",
+              top: "46%",
+              bottom: "auto",
               transform: "translateY(-50%)",
             }}
           />
 
-          {/* Texto — padding direito evita sobreposição com o carro */}
-          <div className="relative z-10" style={{ paddingRight: "44%" }}>
+          {/* Texto — deixa espaço para a foto à direita */}
+          <div className="relative z-10" style={{ paddingRight: "42%", transform: "translateY(-3vh)" }}>
             <h1
               className="font-serif text-teal-400"
               style={{ fontSize: "clamp(2.2rem, 11vh, 5rem)", lineHeight: 0.88 }}
@@ -62,13 +63,14 @@ export default function Home() {
             >
               Em até 30 minutos
             </p>
+          </div>
 
+          <div className="relative z-20 w-full" style={{ marginTop: "clamp(0.6rem, 2vh, 1.5rem)", transform: "translateY(-3vh)" }}>
             <button
               type="button"
               onClick={() => router.push("/formulario")}
               className="w-full rounded-full bg-teal-400 px-5 font-semibold text-slate-950 shadow-lg transition-colors hover:bg-teal-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
               style={{
-                marginTop: "3vh",
                 paddingTop: "clamp(0.8rem, 3.5vh, 1.6rem)",
                 paddingBottom: "clamp(0.8rem, 3.5vh, 1.6rem)",
                 fontSize: "clamp(0.85rem, 4vh, 1.5rem)",
