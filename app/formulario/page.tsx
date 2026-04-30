@@ -96,7 +96,6 @@ export default function CarForm() {
 
   const [erro, setErro] = useState("");
 
-  // Carrega marcas na montagem do componente
   useEffect(() => {
     const carregarMarcas = async () => {
       try {
@@ -116,7 +115,6 @@ export default function CarForm() {
     carregarMarcas();
   }, []);
 
-  // Carrega lista flat da FIPE e agrupa por modelo base quando marca muda
   useEffect(() => {
     if (!marcaSelecionada) {
       setModelosAgrupados([]);
@@ -178,7 +176,6 @@ export default function CarForm() {
     carregarModelos();
   }, [marcaSelecionada]);
 
-  // Carrega anos quando uma versão (código FIPE) é selecionada
   useEffect(() => {
     if (!marcaSelecionada || !formData.modeloCode) {
       setAnos(ANOS_PADRAO);
@@ -281,38 +278,62 @@ export default function CarForm() {
 
   const isFormValid = formData.marca && formData.modelo && formData.versao && formData.ano;
 
+  const selectStyle = {
+    padding: "clamp(0.35rem, 1.5vh, 0.75rem) clamp(0.4rem, 2vw, 1rem)",
+    fontSize: "clamp(0.7rem, 2.2vh, 0.9rem)",
+  };
+
+  const labelStyle = {
+    fontSize: "clamp(0.65rem, 2vh, 0.8rem)",
+    marginBottom: "clamp(0.2rem, 0.8vh, 0.5rem)",
+  };
+
   return (
-    <div className="min-h-screen bg-white">
-      <div className="w-full px-5 py-6">
+    <div className="bg-white" style={{ height: "100dvh", overflowY: "auto" }}>
+      <div
+        className="max-w-2xl mx-auto"
+        style={{ padding: "clamp(0.75rem, 3vh, 2rem) clamp(0.5rem, 4vw, 1.5rem)" }}
+      >
         {/* Header */}
-        <div className="mb-8">
+        <div style={{ marginBottom: "clamp(0.75rem, 3vh, 2.5rem)" }}>
           <button
             onClick={() => router.push("/")}
-            className="flex items-center gap-2 text-[#0d9488] hover:text-[#0f766e] mb-6 transition-colors font-semibold text-base"
+            className="flex items-center gap-2 text-[#0d9488] hover:text-[#0f766e] transition-colors font-semibold"
+            style={{ fontSize: "clamp(0.75rem, 2.5vh, 1rem)", marginBottom: "clamp(0.5rem, 2vh, 2rem)" }}
           >
-            <ArrowLeft className="w-6 h-6" />
+            <ArrowLeft style={{ width: "clamp(0.9rem, 2.5vh, 1.25rem)", height: "clamp(0.9rem, 2.5vh, 1.25rem)" }} />
             <span>Voltar</span>
           </button>
 
-          <div className="mb-6 bg-white border-2 border-gray-100 rounded-2xl p-5 shadow-lg">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-11 h-11 bg-gradient-to-br from-[#0d9488] to-[#0f766e] text-white rounded-full flex items-center justify-center font-bold text-lg shadow-lg">
+          <div
+            className="bg-white border-2 border-gray-100 rounded-2xl shadow-lg"
+            style={{ padding: "clamp(0.5rem, 2vh, 1.5rem)", marginBottom: "clamp(0.5rem, 2vh, 1.5rem)" }}
+          >
+            <div className="flex items-center gap-3" style={{ marginBottom: "clamp(0.2rem, 1vh, 1rem)" }}>
+              <div
+                className="bg-gradient-to-br from-[#0d9488] to-[#0f766e] text-white rounded-full flex items-center justify-center font-bold shadow-lg shrink-0"
+                style={{
+                  width: "clamp(1.5rem, 5vh, 2.5rem)",
+                  height: "clamp(1.5rem, 5vh, 2.5rem)",
+                  fontSize: "clamp(0.7rem, 2.5vh, 1rem)",
+                }}
+              >
                 1
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="font-bold text-gray-900" style={{ fontSize: "clamp(1.1rem, 4.5vh, 1.75rem)" }}>
                 Dados do veículo
               </h1>
             </div>
-            <p className="text-base text-gray-600 ml-14">
+            <p className="text-gray-600" style={{ fontSize: "clamp(0.65rem, 2vh, 0.875rem)" }}>
               Preencha as informações sobre o seu carro
             </p>
           </div>
 
           {/* Progress */}
-          <div className="flex gap-2">
-            <div className="flex-1 h-3 bg-gradient-to-r from-[#0d9488] to-[#0f766e] rounded-full shadow-md"></div>
-            <div className="flex-1 h-3 bg-gray-200 rounded-full"></div>
-            <div className="flex-1 h-3 bg-gray-200 rounded-full"></div>
+          <div className="flex gap-2" style={{ height: "clamp(4px, 1vh, 8px)" }}>
+            <div className="flex-1 bg-gradient-to-r from-[#0d9488] to-[#0f766e] rounded-full shadow-md"></div>
+            <div className="flex-1 bg-gray-200 rounded-full"></div>
+            <div className="flex-1 bg-gray-200 rounded-full"></div>
           </div>
         </div>
 
@@ -321,133 +342,128 @@ export default function CarForm() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           onSubmit={handleSubmit}
-          className="bg-white border-2 border-gray-100 rounded-2xl p-5 shadow-lg space-y-5"
+          className="bg-white border-2 border-gray-100 rounded-2xl shadow-lg"
+          style={{ padding: "clamp(0.75rem, 2.5vh, 2rem)" }}
         >
-          {/* Erro geral */}
-          {erro && (
-            <div className="flex gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-              <AlertCircle className="w-6 h-6 flex-shrink-0 mt-0.5" />
-              <p className="text-base">{erro}</p>
-            </div>
-          )}
-
-          {/* Marca */}
-          <div>
-            <label className="block text-base font-semibold text-gray-700 mb-2">
-              Marca *
-            </label>
-            <select
-              value={formData.marca}
-              onChange={(e) => handleMarcaChange(e.target.value)}
-              disabled={loadingMarcas}
-              className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900 text-base disabled:bg-gray-100 disabled:cursor-not-allowed"
-              required
-            >
-              <option value="">
-                {loadingMarcas ? "Carregando..." : "Selecione"}
-              </option>
-              {marcas.map((marca) => (
-                <option key={marca.code} value={marca.code}>
-                  {marca.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Modelo */}
-          <div>
-            <label className="block text-base font-semibold text-gray-700 mb-2">
-              Modelo *
-            </label>
-            <select
-              value={modeloBaseSelecionado}
-              onChange={(e) => handleModeloChange(e.target.value)}
-              disabled={!marcaSelecionada || loadingModelos}
-              className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900 text-base disabled:bg-gray-100 disabled:cursor-not-allowed"
-              required
-            >
-              <option value="">
-                {!marcaSelecionada
-                  ? "Selecione marca primeiro"
-                  : loadingModelos
-                    ? "Carregando..."
-                    : "Selecione"}
-              </option>
-              {modelosAgrupados.map((modelo) => (
-                <option key={modelo.model} value={modelo.model}>
-                  {modelo.model}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Versão */}
-          <div>
-            <label className="block text-base font-semibold text-gray-700 mb-2">
-              Versão *
-            </label>
-            <select
-              value={versaoSelecionada}
-              onChange={(e) => handleVersaoChange(e.target.value)}
-              disabled={!modeloBaseSelecionado}
-              className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900 text-base disabled:bg-gray-100 disabled:cursor-not-allowed"
-              required
-            >
-              <option value="">
-                {!modeloBaseSelecionado
-                  ? "Selecione modelo primeiro"
-                  : "Selecione versão"}
-              </option>
-              {versoes.map((versao) => (
-                <option key={versao.code} value={versao.code}>
-                  {versao.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Ano */}
-          <div>
-            <label className="block text-base font-semibold text-gray-700 mb-2">
-              Ano de Fabricação *
-            </label>
-            <select
-              value={formData.ano}
-              onChange={(e) => setFormData({ ...formData, ano: e.target.value })}
-              disabled={!versaoSelecionada || loadingAnos}
-              className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900 text-base disabled:bg-gray-100 disabled:cursor-not-allowed"
-              required
-            >
-              <option value="">
-                {!versaoSelecionada
-                  ? "Selecione versão primeiro"
-                  : loadingAnos
-                    ? "Carregando anos..."
-                    : "Selecione ano"}
-              </option>
-              {anos.map((ano) => (
-                <option key={ano} value={ano}>
-                  {ano}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Submit Button */}
-          <div className="pt-4">
-            {!isFormValid && (
-              <p className="text-base text-red-600 mb-3 text-center">
-                * Preencha os campos obrigatórios para continuar
-              </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "clamp(0.5rem, 2vh, 1.5rem)" }}>
+            {/* Erro geral */}
+            {erro && (
+              <div
+                className="flex gap-3 bg-red-50 border border-red-200 rounded-lg text-red-700"
+                style={{ padding: "clamp(0.5rem, 1.5vh, 1rem)" }}
+              >
+                <AlertCircle
+                  className="flex-shrink-0 mt-0.5"
+                  style={{ width: "clamp(0.9rem, 2.5vh, 1.25rem)", height: "clamp(0.9rem, 2.5vh, 1.25rem)" }}
+                />
+                <p style={{ fontSize: "clamp(0.65rem, 2vh, 0.875rem)" }}>{erro}</p>
+              </div>
             )}
-            <button
-              type="submit"
-              disabled={!isFormValid}
-              className="w-full bg-gradient-to-r from-[#0d9488] to-[#0f766e] hover:from-[#0f766e] hover:to-[#115e59] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-5 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-xl"
-            >
-              Continuar
-              <ArrowRight className="w-6 h-6" />
-            </button>
+
+            {/* Marca e Modelo lado a lado */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-semibold text-gray-700" style={labelStyle}>
+                  Marca *
+                </label>
+                <select
+                  value={formData.marca}
+                  onChange={(e) => handleMarcaChange(e.target.value)}
+                  disabled={loadingMarcas}
+                  className="w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  style={selectStyle}
+                  required
+                >
+                  <option value="">{loadingMarcas ? "Carregando..." : "Selecione"}</option>
+                  {marcas.map((marca) => (
+                    <option key={marca.code} value={marca.code}>{marca.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-gray-700" style={labelStyle}>
+                  Modelo *
+                </label>
+                <select
+                  value={modeloBaseSelecionado}
+                  onChange={(e) => handleModeloChange(e.target.value)}
+                  disabled={!marcaSelecionada || loadingModelos}
+                  className="w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  style={selectStyle}
+                  required
+                >
+                  <option value="">
+                    {!marcaSelecionada ? "Selecione marca primeiro" : loadingModelos ? "Carregando..." : "Selecione"}
+                  </option>
+                  {modelosAgrupados.map((modelo) => (
+                    <option key={modelo.model} value={modelo.model}>{modelo.model}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Versão */}
+            <div>
+              <label className="block font-semibold text-gray-700" style={labelStyle}>
+                Versão *
+              </label>
+              <select
+                value={versaoSelecionada}
+                onChange={(e) => handleVersaoChange(e.target.value)}
+                disabled={!modeloBaseSelecionado}
+                className="w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                style={selectStyle}
+                required
+              >
+                <option value="">
+                  {!modeloBaseSelecionado ? "Selecione modelo primeiro" : "Selecione versão"}
+                </option>
+                {versoes.map((versao) => (
+                  <option key={versao.code} value={versao.code}>{versao.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Ano */}
+            <div>
+              <label className="block font-semibold text-gray-700" style={labelStyle}>
+                Ano de Fabricação *
+              </label>
+              <select
+                value={formData.ano}
+                onChange={(e) => setFormData({ ...formData, ano: e.target.value })}
+                disabled={!versaoSelecionada || loadingAnos}
+                className="w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                style={selectStyle}
+                required
+              >
+                <option value="">
+                  {!versaoSelecionada ? "Selecione versão primeiro" : loadingAnos ? "Carregando anos..." : "Selecione ano"}
+                </option>
+                {anos.map((ano) => (
+                  <option key={ano} value={ano}>{ano}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Submit */}
+            <div style={{ paddingTop: "clamp(0.25rem, 1.5vh, 1.5rem)" }}>
+              {!isFormValid && (
+                <p className="text-red-600 text-center" style={{ fontSize: "clamp(0.65rem, 2vh, 0.875rem)", marginBottom: "clamp(0.2rem, 1vh, 0.75rem)" }}>
+                  * Preencha os campos obrigatórios para continuar
+                </p>
+              )}
+              <button
+                type="submit"
+                disabled={!isFormValid}
+                className="w-full bg-gradient-to-r from-[#0d9488] to-[#0f766e] hover:from-[#0f766e] hover:to-[#115e59] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3"
+                style={{ padding: "clamp(0.6rem, 2.5vh, 1rem)", fontSize: "clamp(0.8rem, 3vh, 1.1rem)" }}
+              >
+                Continuar
+                <ArrowRight style={{ width: "clamp(0.9rem, 2.5vh, 1.25rem)", height: "clamp(0.9rem, 2.5vh, 1.25rem)" }} />
+              </button>
+            </div>
           </div>
         </motion.form>
       </div>
