@@ -69,6 +69,17 @@ function extrairNomeVersao(nomeCompleto: string, modeloBase: string): string {
   return nomeCompleto;
 }
 
+function formatarKilometragem(valor: string): string {
+  const numeros = valor.replace(/\D/g, "");
+  if (!numeros) return "";
+  return new Intl.NumberFormat("pt-BR").format(Number(numeros));
+}
+
+function parseKilometragem(valor: string): number {
+  const numeros = valor.replace(/\D/g, "");
+  return numeros ? Number(numeros) : NaN;
+}
+
 export default function CarForm() {
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -79,6 +90,7 @@ export default function CarForm() {
     versao: "",
     versaoName: "",
     ano: "",
+    km: "",
   });
 
   const [marcas, setMarcas] = useState<Marca[]>([]);
@@ -231,6 +243,7 @@ export default function CarForm() {
       versao: "",
       versaoName: "",
       ano: "",
+      km: "",
     });
   };
 
@@ -248,6 +261,7 @@ export default function CarForm() {
       versao: "",
       versaoName: "",
       ano: "",
+      km: "",
     });
   };
 
@@ -261,6 +275,7 @@ export default function CarForm() {
       versaoName: versao?.name || "",
       modeloCode: versao?.code || "",
       ano: "",
+      km: "",
     });
   };
 
@@ -271,14 +286,25 @@ export default function CarForm() {
       modelo: formData.modelo,
       versao: formData.versaoName,
       anoFabricacao: parseInt(formData.ano, 10),
+      quilometragem: parseKilometragem(formData.km),
     };
     localStorage.setItem("carData", JSON.stringify(carData));
     router.push("/dados-pessoais");
   };
 
-  const isFormValid = formData.marca && formData.modelo && formData.versao && formData.ano;
+  const isFormValid =
+    formData.marca &&
+    formData.modelo &&
+    formData.versao &&
+    formData.ano &&
+    parseKilometragem(formData.km) > 0;
 
   const selectStyle = {
+    padding: "clamp(0.35rem, 1.5vh, 0.75rem) clamp(0.4rem, 2vw, 1rem)",
+    fontSize: "clamp(0.7rem, 2.2vh, 0.9rem)",
+  };
+
+  const inputStyle = {
     padding: "clamp(0.35rem, 1.5vh, 0.75rem) clamp(0.4rem, 2vw, 1rem)",
     fontSize: "clamp(0.7rem, 2.2vh, 0.9rem)",
   };
@@ -445,6 +471,26 @@ export default function CarForm() {
                   <option key={ano} value={ano}>{ano}</option>
                 ))}
               </select>
+            </div>
+
+            {/* Quilometragem */}
+            <div>
+              <label className="block font-semibold text-gray-700" style={labelStyle}>
+                Quilometragem do veículo *
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={formData.km}
+                onChange={(e) => setFormData({ ...formData, km: formatarKilometragem(e.target.value) })}
+                placeholder="Ex.: 12.345"
+                className="w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white text-gray-900"
+                style={inputStyle}
+                required
+              />
+              <p className="text-gray-500" style={{ fontSize: "clamp(0.6rem, 1.8vh, 0.8rem)", marginTop: "clamp(0.2rem, 0.8vh, 0.4rem)" }}>
+                Use apenas números. O valor precisa ser maior que zero.
+              </p>
             </div>
 
             {/* Submit */}

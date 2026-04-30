@@ -277,6 +277,7 @@ export default function Confirmation() {
                     <div className="text-gray-600" style={{ ...bodyTextStyle, display: "flex", flexDirection: "column", gap: "clamp(0.1rem, 0.5vh, 0.25rem)" }}>
                       <p><span className="font-semibold">Versão:</span> {carData.versao}</p>
                       <p><span className="font-semibold">Ano:</span> {carData.anoFabricacao}</p>
+                      <p><span className="font-semibold">Quilometragem:</span> {typeof carData.quilometragem === "number" ? carData.quilometragem.toLocaleString("pt-BR") : carData.quilometragem}</p>
                     </div>
                     {personalData && (
                       <div className="text-gray-600" style={{ ...bodyTextStyle, marginTop: "clamp(0.3rem, 1vh, 0.5rem)", display: "flex", flexDirection: "column", gap: "clamp(0.1rem, 0.5vh, 0.25rem)" }}>
